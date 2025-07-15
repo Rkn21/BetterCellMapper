@@ -1,0 +1,33 @@
+{
+  "description": "CellMapper GoogleLocator by Rkn21 Based on dkxce code for API v6",
+  "manifest_version": 2, "name": "CellMapper GoogleLocator", "version": "1.0",
+  "homepage_url": "https://github.com/Rkn21/CellMapperGoogleLocator",
+  "permissions": [
+    "webRequest",
+    "webRequestBlocking",
+    "http://www.cellmapper.net/*",
+    "https://www.cellmapper.net/*",
+    "http://api.cellmapper.net/*",
+    "https://api.cellmapper.net/*",
+    "notifications",
+    "storage",
+    "https://www.googleapis.com/*"
+  ],
+  "options_page": "options.html",
+  "browser_action": {
+    "default_title": "CellMapper Locator Settings",
+    "default_popup": "options.html"
+  },
+  "background": {"scripts": ["background.js"]},
+  "content_scripts": [
+    {
+      "matches": ["https://www.cellmapper.net/*", "http://www.cellmapper.net/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "browser_specific_settings": {"gecko": {
+    "strict_min_version": "57.0a1",
+    "update_url": "https://raw.githubusercontent.com/Rkn21/CellMapperGoogleLocator/master/updates.json"
+  }}
+}
