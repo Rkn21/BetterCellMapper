@@ -16,7 +16,7 @@ The extension extracts tower parameters from CellMapper's API responses and quer
 ## Installation
 
 1. Clone or download this repository.
-2. In Firefox, open the Add-ons Manager and enable "Debug Add-ons" [about:debugging#/runtime/this-firefox](about:debugging#/runtime/this-firefox).
+2. In Firefox, open the Add-ons Manager and enable "Debug Add-ons" or open `about:debugging#/runtime/this-firefox`.
 3. Click **Load Temporary Add-on** and select the `manifest.json` file from this repository.
 
 ## Options
