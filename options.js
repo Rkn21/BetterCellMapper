@@ -13,3 +13,13 @@ function restoreOptions() {
 
 document.addEventListener('DOMContentLoaded', restoreOptions);
 document.getElementById('save').addEventListener('click', saveOptions);
+
+// Toggle API key visibility
+document.addEventListener('DOMContentLoaded', () => {
+  const showCheckbox = document.getElementById('showApiKey');
+  showCheckbox.checked = false;
+  showCheckbox.addEventListener('change', () => {
+    const apikeyInput = document.getElementById('apikey');
+    apikeyInput.type = showCheckbox.checked ? 'text' : 'password';
+  });
+});
