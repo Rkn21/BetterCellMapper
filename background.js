@@ -4,7 +4,7 @@ function listener(details)
   const url = new URL(details.url);  
   if (!url.pathname == 'api.cellmapper.net') return null;
   if (!url.pathname.startsWith("/v6/getTowerInformation")) return null;
-  console.log(details.url);
+  //console.log(details.url);
   
   let filter = browser.webRequest.filterResponseData(details.requestId);
   let decoder = new TextDecoder("utf-8");
@@ -13,7 +13,7 @@ function listener(details)
 
   filter.ondata = event =>
   {	
-    console.log("Received data chunk");
+    //console.log("Received data chunk");
     if (event.data.byteLength === 0) {
       let str = decoder.decode(event.data, {stream: true});
       allData += str;
@@ -40,7 +40,7 @@ function listener(details)
         regionID: rd.regionID,
         cells: Object.keys(rd.cells)
       };
-      console.log('Extracted data:', extracted);
+      //console.log('Extracted data:', extracted);
       // Save for content script requests
       lastExtracted = extracted;
     }
