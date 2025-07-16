@@ -1,4 +1,4 @@
-# CellMapper GoogleLocator
+# CellMapper GoogleLocator ![Extension icon](icons/icon128.png)
 
 CellMapper GoogleLocator is a Firefox extension that integrates with [CellMapper](https://www.cellmapper.net/). It adds a **Locate with Google API** action to the tower information dialog and displays estimated coordinates retrieved from the Google Geolocation API.
 
