@@ -1,98 +1,120 @@
 (function(){
   function addLocateLink() {
-    document.querySelectorAll("table.modal_table").forEach((table) => {
-      const rows = table.getElementsByTagName("tr");
-      for (let row of rows) {
-        const td0 = row.cells[0];
-        if (td0 && td0.textContent.trim() === "Actions") {
-          // Insert a new table row under 'Actions' with a link to show JSON data if not present in this table
-          const hasLocate = Array.from(table.getElementsByTagName('tr'))
-            .some(r => r.cells[0] && r.cells[0].textContent.trim() === 'Locate');
-          if (!hasLocate) {
-            const newRow = document.createElement("tr");
-            const tdLabel = document.createElement("td");
-            tdLabel.textContent = "Locate";
-            const tdAction = document.createElement("td");
-            const a = document.createElement("a");
-            a.href = "#";
-            a.className = "cellmapper-locate-link";
-            a.textContent = "JS DATA";
-            // Change click handler to request data on demand
-            a.addEventListener("click", e => {
-              e.preventDefault();
-              browser.runtime.sendMessage({ action: "getTowerData" })
-                .then(data => {
-                  if (!data) return alert("No data available");
-                  // Build payload for Google Geolocation API
-                  const radioType = data.RAT.toLowerCase() === "umts" ? "wcdma" : data.RAT.toLowerCase();
-                  let payload;
-                  if (radioType === "nr") {
-                    // 5G: radioType at root, towers without radioType
-                    const towersNr = data.cells.map(id => {
-                      const t = {
-                        locationAreaCode: Number(data.regionID),
-                        mobileCountryCode: Number(data.countryID),
-                        mobileNetworkCode: Number(data.providerID)
-                      };
-                      t.newRadioCellId = Number(id);
-                      return t;
-                    });
-                    payload = { radioType: "nr", considerIp: false, cellTowers: towersNr };
-                  } else {
-                    // 2G/3G/4G: each tower with radioType and cellId
-                    const towers = data.cells.map(id => ({
-                      radioType,
-                      locationAreaCode: Number(data.regionID),
-                      mobileCountryCode: Number(data.countryID),
-                      mobileNetworkCode: Number(data.providerID),
-                      cellId: Number(id)
-                    }));
-                    payload = { considerIp: false, cellTowers: towers };
-                  }
-                  // Retrieve API key and call Google Geolocation
-                  browser.storage.local.get("apiKey").then(res => {
-                    const key = res.apiKey;
-                    if (!key) return alert("API key not set in options");
-                    fetch(`https://www.googleapis.com/geolocation/v1/geolocate?key=${key}`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify(payload)
-                    })
-                      .then(r => r.json())
-                      .then(geo => {
-                        if (!geo || !geo.location) return alert('No geolocation result from Google API, Request payload: ' + JSON.stringify(payload));
-                        const lat = geo.location.lat;
-                        const lng = geo.location.lng;
-                        // Choose link based on countryID (MCC)
-                        const mcc = data.countryID;
-                        let url;
-                        if (mcc === 208) {
-                          // Cartoradio expects lon/lat
-                          url = `https://www.cartoradio.fr/index.html#/cartographie/lonlat/${lng}/${lat}`;
-                        } else {
-                          // Google Maps query lat,lng
-                          url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-                        }
-                        // Open in new tab
-                        window.open(url, '_blank');
+    const firstTable = document.querySelector("table.modal_table");
+    if (!firstTable) return;
+
+    const rows = firstTable.getElementsByTagName("tr");
+    for (let row of rows) {
+      const td0 = row.cells[0];
+      if (td0 && td0.textContent.trim() === "Actions") {
+        // Insert a new table row under 'Actions' with a link to show JSON data if not present in this table
+        // Check if this table already has our locate row by label
+        const hasLocate = Array.from(firstTable.querySelectorAll('tr'))
+          .some(r => r.cells[0] && r.cells[0].textContent.trim() === 'Locate with Google API');
+        if (!hasLocate) {
+          const newRow = document.createElement("tr");
+          const tdLabel = document.createElement("td");
+          tdLabel.textContent = "Locate with Google API";
+          const tdAction = document.createElement("td");
+          const ul = document.createElement("ul");
+          ul.style.margin = "0";
+          // Only show Cartoradio + CouvertureMobile for MCC 208, else only Google Maps
+          browser.runtime.sendMessage({ action: "getTowerData" })
+            .then(data => {
+              if (!data) return;
+              const radioType = data.RAT.toLowerCase() === "umts" ? "wcdma" : data.RAT.toLowerCase();
+              let payload;
+              if (radioType === "nr") {
+                const towersNr = data.cells.map(id => ({
+                  locationAreaCode: Number(data.regionID),
+                  mobileCountryCode: Number(data.countryID),
+                  mobileNetworkCode: Number(data.providerID),
+                  newRadioCellId: Number(id)
+                }));
+                payload = { radioType: "nr", considerIp: false, cellTowers: towersNr };
+              } else {
+                const towers = data.cells.map(id => ({
+                  radioType,
+                  locationAreaCode: Number(data.regionID),
+                  mobileCountryCode: Number(data.countryID),
+                  mobileNetworkCode: Number(data.providerID),
+                  cellId: Number(id)
+                }));
+                payload = { considerIp: false, cellTowers: towers };
+              }
+              browser.storage.local.get("apiKey").then(res => {
+                const key = res.apiKey;
+                if (!key) return;
+                fetch(`https://www.googleapis.com/geolocation/v1/geolocate?key=${key}`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload)
+                })
+                  .then(r => r.json())
+                  .then(geo => {
+                    if (!geo || !geo.location) return;
+                    const lat = geo.location.lat;
+                    const lng = geo.location.lng;
+                    const mcc = data.countryID;
+                    ul.innerHTML = '';
+                    if (mcc === 208) {
+                      // Cartoradio
+                      const li1 = document.createElement("li");
+                      const a1 = document.createElement("a");
+                      a1.className = 'cellmapper-locate-link';
+                      a1.href = `https://www.cartoradio.fr/index.html#/cartographie/lonlat/${lng}/${lat}`;
+                      a1.textContent = "Cartoradio";
+                      a1.target = '_blank';
+                      li1.appendChild(a1);
+                      ul.appendChild(li1);
+                      // CouvertureMobile
+                      const li2 = document.createElement("li");
+                      const a2 = document.createElement("a");
+                      a2.className = 'cellmapper-locate-link';
+                      a2.href = '#';
+                      a2.textContent = "CouvertureMobile";
+                      a2.addEventListener("click", e => {
+                        e.preventDefault();
+                        const latInt = Math.round(lat * 100000);
+                        const lngInt = Math.round(lng * 100000);
+                        const provider = data.providerID;
+                        const mncMap = {1:'Oo',20:'Ob',15:'Of',10:'Os'};
+                        let operatorParams = '';
+                        Object.entries(mncMap).forEach(([mnc,param]) => {
+                          if (Number(mnc)!==provider) operatorParams += `&${param}=0`;
+                        });
+                        const techMap = {gsm:'T2G',wcdma:'T3G',lte:'T4G',nr:'T5G'};
+                        let techParams = Object.values(techMap).map(p=>`&${p}=0`).join('');
+                        const currentTech = techMap[radioType]||'';
+                        if (currentTech) techParams = techParams.replace(`&${currentTech}=0`,'');
+                        const couvUrl = `https://www.couverture-mobile.fr/#lat=${latInt}&lng=${lngInt}&z=17${techParams}&actives=1${operatorParams}`;
+                        window.open(couvUrl,'_blank');
                       });
+                      li2.appendChild(a2);
+                      ul.appendChild(li2);
+                    } else {
+                      // Only Google Maps
+                      const li = document.createElement("li");
+                      const a = document.createElement("a");
+                      a.className = 'cellmapper-locate-link';
+                      a.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                      a.textContent = "Google Maps";
+                      a.target = '_blank';
+                      li.appendChild(a);
+                      ul.appendChild(li);
+                    }
                   });
-                });
+              });
             });
-            // Wrap link in UL/LI to show bullet like other Actions
-            const ul = document.createElement("ul");
-            ul.style.margin = "0";
-            const li = document.createElement("li");
-            li.appendChild(a);
-            ul.appendChild(li);
-            tdAction.appendChild(ul);
-            newRow.appendChild(tdLabel);
-            newRow.appendChild(tdAction);
-            row.parentNode.insertBefore(newRow, row.nextSibling);
-          }
+          // Append the generated list to tdAction
+          tdAction.appendChild(ul);
+          // Build and insert row
+          newRow.appendChild(tdLabel);
+          newRow.appendChild(tdAction);
+          row.parentNode.insertBefore(newRow, row.nextSibling);
         }
       }
-    });
+    }
   }
 
   document.addEventListener("click", () => {
