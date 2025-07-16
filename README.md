@@ -1,1 +1,36 @@
-# CellMapperGoogleLocator
+# CellMapper GoogleLocator
+
+CellMapper GoogleLocator is a Firefox extension that integrates with [CellMapper](https://www.cellmapper.net/). It adds a **Locate with Google API** action to the tower information dialog and displays estimated coordinates retrieved from the Google Geolocation API.
+
+The extension extracts tower parameters from CellMapper's API responses and queries Google to approximate the location. When available, links to mapping services are shown so you can visualize the result on a map.
+
+## Features
+
+- Adds a new row to the tower details popup with a "Locate with Google API" option.
+- Uses the Google Geolocation API to estimate the tower's latitude and longitude.
+- Opens the location in Google Maps. For French networks (MCC 208) additional links to **Cartoradio** and **CouvertureMobile** are provided.
+- Stores your Google API key locally using the extension options page.
+
+## Installation
+
+1. Clone or download this repository.
+2. In Firefox, open the Add-ons Manager and enable "Debug Add-ons".
+3. Click **Load Temporary Add-on** and select the `manifest.json` file from this repository.
+
+## Options
+
+Click the extension icon to open the settings page and enter your Google API key.
+You can obtain this key from the Google Cloud Console. Google requires setting
+up billing by providing a credit card, but the Geolocation API includes
+**10,000 free requests per month**, which is more than enough for typical use.
+Your key remains private and is stored only in your browser's local storage.
+
+## Development Notes
+
+- `background.js` intercepts requests to `getTowerInformation` and saves the tower data for the content script.
+- `content.js` adds the Locate link to CellMapper's popup and performs the API request using the stored key.
+- Permissions include access to CellMapper domains, Google APIs, storage, and webRequest for request interception.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
