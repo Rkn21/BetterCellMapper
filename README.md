@@ -11,6 +11,8 @@ The extension extracts tower parameters from CellMapper's API responses and quer
 - Opens the location in Google Maps. For French networks (MCC 208) additional links to **Cartoradio** and **CouvertureMobile** are provided.
 - Stores your Google API key locally using the extension options page.
 
+![Extension screenshot](CM_screen.png)
+
 ## Installation
 
 1. Clone or download this repository.
