@@ -69,9 +69,13 @@
               function handleClick(openFn) {
                 return e => {
                   e.preventDefault();
-                  fetchLocation().then(loc => {
-                    if (loc) openFn(loc.lat, loc.lng);
-                  });
+                fetchLocation().then(loc => {
+                    if (loc) {
+                        openFn(loc.lat, loc.lng);
+                    } else {
+                        showNoResultModal();
+                    }
+                });
                 };
               }
 
@@ -143,6 +147,25 @@
     }
   }
 
+  /**
+   * Display a modal informing the user that no results were returned from Google API.
+   */
+  function showNoResultModal() {
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+    const dialog = document.createElement('div');
+    dialog.style.cssText = 'background:white;padding:20px;border-radius:5px;max-width:400px;text-align:center;';
+    const message = document.createElement('p');
+    message.textContent = "No location found via Google API.";
+    const btn = document.createElement('button');
+    btn.textContent = 'Close';
+    btn.style.marginTop = '10px';
+    btn.addEventListener('click', () => document.body.removeChild(modal));
+    dialog.appendChild(message);
+    dialog.appendChild(btn);
+    modal.appendChild(dialog);
+    document.body.appendChild(modal);
+  }
   document.addEventListener("click", () => {
     setTimeout(addLocateLink, 500);
   });
