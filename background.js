@@ -1,5 +1,9 @@
-function listener(details) 
-{ 
+let lastExtracted;
+let lastTowerRequest = null;
+let lastTowerResponse = null;
+
+function listener(details)
+{
   const del = ';';
   const url = new URL(details.url);  
   if (!url.pathname == 'api.cellmapper.net') return null;
@@ -59,3 +63,72 @@ browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true; // keep channel open for async response
   }
 });
+
+function computeArea(b) {
+  return Math.abs((b.neLat - b.swLat) * (b.neLon - b.swLon));
+}
+
+function intersectionArea(a, b) {
+  const neLat = Math.min(a.neLat, b.neLat);
+  const neLon = Math.min(a.neLon, b.neLon);
+  const swLat = Math.max(a.swLat, b.swLat);
+  const swLon = Math.max(a.swLon, b.swLon);
+  if (neLat <= swLat || neLon <= swLon) return 0;
+  return (neLat - swLat) * (neLon - swLon);
+}
+
+function movedSignificantly(newReq, lastReq) {
+  if (!lastReq) return true;
+  const areaLast = computeArea(lastReq.bounds);
+  const inter = intersectionArea(newReq.bounds, lastReq.bounds);
+  const coverage = inter / areaLast;
+  if (coverage < 0.2) return true;
+  const areaNew = computeArea(newReq.bounds);
+  const zoomChange = Math.abs(areaNew - areaLast) / areaLast;
+  return zoomChange > 0.2;
+}
+
+function onGetTowers(details) {
+  const url = new URL(details.url);
+  if (url.hostname !== 'api.cellmapper.net' || !url.pathname.startsWith('/v6/getTowers')) {
+    return;
+  }
+
+  const req = {
+    bounds: {
+      neLat: parseFloat(url.searchParams.get('boundsNELatitude')),
+      neLon: parseFloat(url.searchParams.get('boundsNELongitude')),
+      swLat: parseFloat(url.searchParams.get('boundsSWLatitude')),
+      swLon: parseFloat(url.searchParams.get('boundsSWLongitude'))
+    }
+  };
+
+  if (lastTowerRequest && lastTowerResponse && !movedSignificantly(req, lastTowerRequest)) {
+    const dataUrl = 'data:application/json,' + encodeURIComponent(lastTowerResponse);
+    return { redirectUrl: dataUrl };
+  }
+
+  lastTowerRequest = req;
+
+  let filter = browser.webRequest.filterResponseData(details.requestId);
+  let decoder = new TextDecoder('utf-8');
+  let allData = '';
+
+  filter.ondata = event => {
+    allData += decoder.decode(event.data, {stream: true});
+    filter.write(event.data);
+  };
+
+  filter.onstop = () => {
+    filter.close();
+    lastTowerResponse = allData;
+  };
+
+  return {};
+}
+
+browser.webRequest.onBeforeRequest.addListener(
+  onGetTowers,
+  { urls: ['https://api.cellmapper.net/v6/getTowers*'] },
+  ['blocking']
+);
