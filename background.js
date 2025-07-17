@@ -1,13 +1,26 @@
 let lastExtracted;
 let lastTowerRequest = null;
 let lastTowerResponse = null;
+let towerStats = { total: 0, avoided: 0 };
 
-function listener(details)
-{
+browser.storage.local.get('towerStats').then(res => {
+  if (res.towerStats) towerStats = res.towerStats;
+});
+
+function saveStats() {
+  browser.storage.local.set({ towerStats });
+}
+
+function resetCache() {
+  lastTowerRequest = null;
+  lastTowerResponse = null;
+}
+
+function listener(details) {
   const del = ';';
-  const url = new URL(details.url);  
-  if (!url.pathname == 'api.cellmapper.net') return null;
-  if (!url.pathname.startsWith("/v6/getTowerInformation")) return null;
+  const url = new URL(details.url);
+  if (url.hostname !== 'api.cellmapper.net') return null;
+  if (!url.pathname.startsWith('/v6/getTowerInformation')) return null;
   //console.log(details.url);
   
   let filter = browser.webRequest.filterResponseData(details.requestId);
@@ -85,8 +98,7 @@ function movedSignificantly(newReq, lastReq) {
   if (coverage < 0.2) return true;
   const areaNew = computeArea(newReq.bounds);
   const zoomChange = Math.abs(areaNew - areaLast) / areaLast;
-  console.log(`Coverage: ${coverage}, Zoom change: ${zoomChange}`);
-  return zoomChange > 1;
+  return zoomChange > 0.2;
 }
 
 function onGetTowers(details) {
@@ -94,6 +106,8 @@ function onGetTowers(details) {
   if (url.hostname !== 'api.cellmapper.net' || !url.pathname.startsWith('/v6/getTowers')) {
     return;
   }
+
+  towerStats.total += 1;
 
   const req = {
     bounds: {
@@ -105,11 +119,14 @@ function onGetTowers(details) {
   };
 
   if (lastTowerRequest && lastTowerResponse && !movedSignificantly(req, lastTowerRequest)) {
+    towerStats.avoided += 1;
+    saveStats();
     const dataUrl = 'data:application/json,' + encodeURIComponent(lastTowerResponse);
     return { redirectUrl: dataUrl };
   }
 
   lastTowerRequest = req;
+  saveStats();
 
   let filter = browser.webRequest.filterResponseData(details.requestId);
   let decoder = new TextDecoder('utf-8');
@@ -123,6 +140,7 @@ function onGetTowers(details) {
   filter.onstop = () => {
     filter.close();
     lastTowerResponse = allData;
+    saveStats();
   };
 
   return {};
@@ -133,3 +151,10 @@ browser.webRequest.onBeforeRequest.addListener(
   { urls: ['https://api.cellmapper.net/v6/getTowers*'] },
   ['blocking']
 );
+
+browser.webRequest.onBeforeRequest.addListener(
+  resetCache,
+  { urls: ['https://www.cellmapper.net/*'], types: ['main_frame'] }
+);
+
+browser.tabs.onRemoved.addListener(resetCache);
