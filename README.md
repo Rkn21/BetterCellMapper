@@ -13,6 +13,8 @@ The extension extracts tower parameters from CellMapper's API responses and cont
   significantly, reducing server traffic. Statistics about avoided requests are
   displayed on the options page. (Basically fix what CellMapper should, come on guys, is it so hard to implement a cache?).
 
+Feel free to ask for new features, report issues or contribute to the project.
+
 ![Extension screenshot](CM_screen.png)
 
 ## Installation
