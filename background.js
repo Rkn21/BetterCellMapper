@@ -85,7 +85,8 @@ function movedSignificantly(newReq, lastReq) {
   if (coverage < 0.2) return true;
   const areaNew = computeArea(newReq.bounds);
   const zoomChange = Math.abs(areaNew - areaLast) / areaLast;
-  return zoomChange > 0.2;
+  console.log(`Coverage: ${coverage}, Zoom change: ${zoomChange}`);
+  return zoomChange > 1;
 }
 
 function onGetTowers(details) {
