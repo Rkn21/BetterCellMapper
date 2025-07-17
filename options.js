@@ -14,6 +14,20 @@ function restoreOptions() {
 document.addEventListener('DOMContentLoaded', restoreOptions);
 document.getElementById('save').addEventListener('click', saveOptions);
 
+function displayStats() {
+  browser.storage.local.get('towerStats').then(res => {
+    const stats = res.towerStats || { total: 0, avoided: 0 };
+    const passed = stats.total - stats.avoided;
+    const percent = stats.total ? Math.round((stats.avoided / stats.total) * 100) : 0;
+    document.getElementById('totalRequests').textContent = stats.total;
+    document.getElementById('passedRequests').textContent = passed;
+    document.getElementById('avoidedRequests').textContent = stats.avoided;
+    document.getElementById('percentSaved').textContent = percent + '%';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', displayStats);
+
 // Toggle API key visibility
 document.addEventListener('DOMContentLoaded', () => {
   const showCheckbox = document.getElementById('showApiKey');

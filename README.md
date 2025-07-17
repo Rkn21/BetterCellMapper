@@ -10,6 +10,9 @@ The extension extracts tower parameters from CellMapper's API responses and cont
 - Uses the Google Geolocation API to estimate the tower's latitude and longitude.
 - Opens the location in Google Maps. For French networks (MCC 208) additional links to **Cartoradio** and **CouvertureMobile** are provided.
 - Stores your Google API key locally using the extension options page.
+- Caches tower requests and reuses the last response when the map hasn't moved
+  significantly, reducing server traffic. Statistics about avoided requests are
+  displayed on the options page.
 
 ![Extension screenshot](CM_screen.png)
 
@@ -32,7 +35,11 @@ Your key remains private and is stored only in your browser's local storage.
 - `background.js` intercepts requests to `getTowerInformation` and saves the tower data for the content script.
 - `content.js` adds the Locate link to CellMapper's popup and retrieves the location when a link is clicked using the stored key.
 - Permissions include access to CellMapper domains, Google APIs, storage, and webRequest for request interception.
+- Tower requests are cached in `background.js` and reused when the viewed area
+  hasn't changed much to reduce network traffic. Statistics about avoided
+  requests are persisted in storage.
 
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
