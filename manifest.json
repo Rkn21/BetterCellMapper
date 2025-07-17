@@ -1,5 +1,5 @@
 {
-  "description": "BetterCellMapper enhances the CellMapper website by adding Google Geolocation API support for tower location, improving user experience with additional links and a Captcha limiter mechanism.",
+  "description": "Firefox extension BetterCellMapper enhances the CellMapper website by adding Google Geolocation API support for tower location, improving user experience with additional links and a Captcha limiter mechanism.",
   "author": "Rkn21",
   "manifest_version": 2,
   "name": "BetterCellMapper",
