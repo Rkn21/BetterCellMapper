@@ -18,6 +18,12 @@
           const tdAction = document.createElement("td");
           const ul = document.createElement("ul");
           ul.style.margin = "0";
+          // Element to display accuracy returned by Google API
+          const accuracyEl = document.createElement('p');
+          accuracyEl.className = 'cellmapper-accuracy';
+          accuracyEl.style.margin = '5px 0 0 0';
+          tdAction.appendChild(accuracyEl);
+          // List of navigation links
           tdAction.appendChild(ul);
 
           browser.runtime.sendMessage({ action: "getTowerData" })
@@ -52,7 +58,7 @@
                 return browser.storage.local.get("apiKey").then(res => {
                   const key = res.apiKey;
                   if (!key) return null;
-                  return fetch(`https://www.googleapis.com/geolocation/v1/geolocate?key=${key}`, {
+                return fetch(`https://www.googleapis.com/geolocation/v1/geolocate?key=${key}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload)
@@ -60,8 +66,11 @@
                     .then(r => r.json())
                     .then(geo => {
                       if (!geo || !geo.location) return null;
-                      cachedLocation = geo.location;
-                      return cachedLocation;
+                      const { lat, lng } = geo.location;
+                      const accuracy = geo.accuracy;
+                      const result = { lat, lng, accuracy };
+                      cachedLocation = result;
+                      return result;
                     });
                 });
               }
@@ -69,13 +78,22 @@
               function handleClick(openFn) {
                 return e => {
                   e.preventDefault();
-                fetchLocation().then(loc => {
+                  // Clear previous accuracy display
+                  accuracyEl.textContent = '';
+                  fetchLocation().then(loc => {
                     if (loc) {
+                      // Display accuracy above links
+                      accuracyEl.textContent = `Accuracy: ${loc.accuracy} m`;
+                      // If accuracy too high, show error modal with 'Open anyway' option
+                      if (loc.accuracy > 3000) {
+                        showNoResultModal(`Accuracy: ${loc.accuracy} > 3Km`, () => openFn(loc.lat, loc.lng));
+                      } else {
                         openFn(loc.lat, loc.lng);
+                      }
                     } else {
-                        showNoResultModal();
+                      showNoResultModal();
                     }
-                });
+                  });
                 };
               }
 
@@ -150,19 +168,30 @@
   /**
    * Display a modal informing the user that no results were returned from Google API.
    */
-  function showNoResultModal() {
+  function showNoResultModal(msg, onConfirm) {
     const modal = document.createElement('div');
     modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
     const dialog = document.createElement('div');
     dialog.style.cssText = 'background:white;padding:20px;border-radius:5px;max-width:400px;text-align:center;';
     const message = document.createElement('p');
-    message.textContent = "No location found via Google API.";
-    const btn = document.createElement('button');
-    btn.textContent = 'Close';
-    btn.style.marginTop = '10px';
-    btn.addEventListener('click', () => document.body.removeChild(modal));
+    message.textContent = msg || "No location found via Google API.";
+    const btnClose = document.createElement('button');
+    btnClose.textContent = 'Close';
+    btnClose.style.marginTop = '10px';
+    btnClose.addEventListener('click', () => document.body.removeChild(modal));
     dialog.appendChild(message);
-    dialog.appendChild(btn);
+    dialog.appendChild(btnClose);
+    // If provided, add 'Open anyway' button
+    if (typeof onConfirm === 'function') {
+      const btnOpen = document.createElement('button');
+      btnOpen.textContent = 'Open anyway';
+      btnOpen.style.margin = '10px 0 0 10px';
+      btnOpen.addEventListener('click', () => {
+        document.body.removeChild(modal);
+        onConfirm();
+      });
+      dialog.appendChild(btnOpen);
+    }
     modal.appendChild(dialog);
     document.body.appendChild(modal);
   }
