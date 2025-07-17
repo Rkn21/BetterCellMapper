@@ -98,7 +98,7 @@ function movedSignificantly(newReq, lastReq) {
   if (coverage < 0.2) return true;
   const areaNew = computeArea(newReq.bounds);
   const zoomChange = Math.abs(areaNew - areaLast) / areaLast;
-  return zoomChange > 0.2;
+  return zoomChange > 1;
 }
 
 function onGetTowers(details) {
@@ -115,10 +115,20 @@ function onGetTowers(details) {
       neLon: parseFloat(url.searchParams.get('boundsNELongitude')),
       swLat: parseFloat(url.searchParams.get('boundsSWLatitude')),
       swLon: parseFloat(url.searchParams.get('boundsSWLongitude'))
-    }
+    },
+    MCC: url.searchParams.get('MCC'),
+    MNC: url.searchParams.get('MNC'),
+    RAT: url.searchParams.get('RAT')
   };
 
-  if (lastTowerRequest && lastTowerResponse && !movedSignificantly(req, lastTowerRequest)) {
+  if (
+    lastTowerRequest &&
+    lastTowerResponse &&
+    req.MCC === lastTowerRequest.MCC &&
+    req.MNC === lastTowerRequest.MNC &&
+    req.RAT === lastTowerRequest.RAT &&
+    !movedSignificantly(req, lastTowerRequest)
+  ) {
     towerStats.avoided += 1;
     saveStats();
     const dataUrl = 'data:application/json,' + encodeURIComponent(lastTowerResponse);

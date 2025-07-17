@@ -1,6 +1,9 @@
 {
-  "description": "CellMapper GoogleLocator by Rkn21 Based on dkxce code for API v6",
-  "manifest_version": 2, "name": "CellMapper GoogleLocator", "version": "1.0",
+  "description": "BetterCellMapper enhances the CellMapper website by adding Google Geolocation API support for tower location, improving user experience with additional links and a Captcha limiter mechanism.",
+  "author": "Rkn21",
+  "manifest_version": 2,
+  "name": "BetterCellMapper",
+  "version": "1.0",
   "homepage_url": "https://github.com/Rkn21/CellMapperGoogleLocator",
   "permissions": [
     "webRequest",
@@ -15,7 +18,7 @@
   ],
   "options_page": "options.html",
   "browser_action": {
-    "default_title": "CellMapper Locator Settings",
+    "default_title": "BetterCellMapper",
     "default_popup": "options.html",
     "default_icon": {
       "16": "icons/icon16.png",
